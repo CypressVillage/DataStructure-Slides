@@ -10,7 +10,7 @@ class TreeNode(VGroup):
         self.left: Optional['TreeNode'] = None
         self.right: Optional['TreeNode'] = None
         self.parent: Optional['TreeNode'] = None
-        self.height: int = 1
+        self._tree_height: int = 1
         self.edge_to_parent: Optional[Line] = None
 
         self.radius = radius
