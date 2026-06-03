@@ -7,6 +7,8 @@ from .BST import BinaryTree, TreeNode
 class AVLTree(BinaryTree):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.rotation_desc: List[str] = []
+        self.rotation_highlights: List[List[TreeNode]] = []
 
     # ─── AVL 内部 ───────────────────────────────────────
 
@@ -115,6 +117,8 @@ class AVLTree(BinaryTree):
 
     def _rebalance(self, node: TreeNode) -> List[List[Animation]]:
         groups = []
+        self.rotation_desc = []
+        self.rotation_highlights = []
         current = node
         while current:
             self._update_height(current)
@@ -123,19 +127,56 @@ class AVLTree(BinaryTree):
 
             if bf > 1:
                 anchor = self.root.get_center()
-                if self._balance_factor(current.left) < 0:
+                child_bf = self._balance_factor(current.left)
+                lh = self._get_height(current.left)
+                rh = self._get_height(current.right)
+
+                if child_bf < 0:
+                    y = current.left
+                    self.rotation_desc.append(
+                        f"LR(1/2) | 左旋{y.val} | {current.val}失衡(bf={bf}) 左高={lh} 右高={rh}"
+                    )
+                    self.rotation_highlights.append([y, current])
                     self._rotate_left(current.left)
                     groups.append(self._rotation_anims(anchor_point=anchor))
-                    did_rotate = True
+
+                lh = self._get_height(current.left)
+                rh = self._get_height(current.right)
+                bf = self._balance_factor(current)
+                if self.rotation_desc:
+                    desc = f"LR(2/2) | 右旋{current.val} | bf={bf}"
+                else:
+                    desc = f"LL旋转 | 右旋{current.val} | {current.val}失衡(bf={bf}) 左高={lh} 右高={rh}"
+                self.rotation_desc.append(desc)
+                self.rotation_highlights.append([current])
                 self._rotate_right(current)
                 groups.append(self._rotation_anims(anchor_point=anchor))
                 did_rotate = True
+
             elif bf < -1:
                 anchor = self.root.get_center()
-                if self._balance_factor(current.right) > 0:
+                child_bf = self._balance_factor(current.right)
+                lh = self._get_height(current.left)
+                rh = self._get_height(current.right)
+
+                if child_bf > 0:
+                    y = current.right
+                    self.rotation_desc.append(
+                        f"RL(1/2) | 右旋{y.val} | {current.val}失衡(bf={bf}) 左高={lh} 右高={rh}"
+                    )
+                    self.rotation_highlights.append([y, current])
                     self._rotate_right(current.right)
                     groups.append(self._rotation_anims(anchor_point=anchor))
-                    did_rotate = True
+
+                lh = self._get_height(current.left)
+                rh = self._get_height(current.right)
+                bf = self._balance_factor(current)
+                if self.rotation_desc:
+                    desc = f"RL(2/2) | 左旋{current.val} | bf={bf}"
+                else:
+                    desc = f"RR旋转 | 左旋{current.val} | {current.val}失衡(bf={bf}) 左高={lh} 右高={rh}"
+                self.rotation_desc.append(desc)
+                self.rotation_highlights.append([current])
                 self._rotate_left(current)
                 groups.append(self._rotation_anims(anchor_point=anchor))
                 did_rotate = True
@@ -153,7 +194,6 @@ class AVLTree(BinaryTree):
 
     def insert(self, value: int) -> Tuple[Optional[TreeNode], List[List[Animation]]]:
         node, anim_groups = super().insert(value)
-        # return node, anim_groups
         if node is None:
             return node, anim_groups
         if self.root is node and node.left is None and node.right is None:

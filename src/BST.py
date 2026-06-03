@@ -15,9 +15,10 @@ class TreeNode(VGroup):
 
         self.radius = radius
         self.default_color = color
+        self.default_opacity = 0.5
         self.circle = Circle(
             radius=radius, color=color,
-            fill_color=color, fill_opacity=0.5
+            fill_color=color, fill_opacity=self.default_opacity
         )
         self.label = Text(str(value), font_size=font_size)
         self.add(self.circle, self.label)
@@ -26,7 +27,7 @@ class TreeNode(VGroup):
         return self.circle.animate.set_fill(color, opacity=0.9)
 
     def anim_unhighlight(self):
-        return self.circle.animate.set_fill(self.default_color, opacity=0.9)
+        return self.circle.animate.set_fill(self.default_color, opacity=self.default_opacity)
 
 
 class BinaryTree(VGroup):
@@ -118,8 +119,7 @@ class BinaryTree(VGroup):
     def _layout_anims(self, targets: dict) -> List[Animation]:
         anims = []
         for node, pos in targets.items():
-            if not np.allclose(node.get_center(), pos):
-                anims.append(ApplyMethod(node.move_to, pos))
+            anims.append(ApplyMethod(node.move_to, pos))
             if node.edge_to_parent and node.parent:
                 ppos = targets[node.parent]
                 a, b = self._edge_endpoints(ppos, pos, self.node_radius)
