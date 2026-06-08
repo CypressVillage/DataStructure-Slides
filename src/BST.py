@@ -3,7 +3,7 @@ from typing import Optional, List, Tuple
 
 class TreeNode(VGroup):
     def __init__(self, value: int, 
-                 radius: float = 0.35, color=BLUE,
+                 radius: float = 0.3, color=GREEN,
                  font_size: int = 26, **kwargs):
         super().__init__(**kwargs)
         self.val = value
@@ -15,7 +15,7 @@ class TreeNode(VGroup):
 
         self.radius = radius
         self.default_color = color
-        self.default_opacity = 0.5
+        self.default_opacity = 0
         self.circle = Circle(
             radius=radius, color=color,
             fill_color=color, fill_opacity=self.default_opacity
@@ -31,7 +31,7 @@ class TreeNode(VGroup):
 
 
 class BinaryTree(VGroup):
-    def __init__(self, node_radius: float = 0.35, node_color=BLUE,
+    def __init__(self, node_radius: float = 0.3, node_color=GREEN,
                  h_spacing: float = 0.6, v_spacing: float = 0.9,
                  edge_color=WHITE, edge_width: float = 2,
                  root_position=ORIGIN, **kwargs):
