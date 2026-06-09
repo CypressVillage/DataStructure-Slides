@@ -1,13 +1,15 @@
 from manim import *
 from manim_slides import Slide
 from src import AVLTree, BinaryTree
+from src.Dijkstra import DijkstraGraph, DijkstraTable, create_dijkstra_history_table
 
 
 class slides(Slide):
     def construct(self):
-        self.construct_intro()
-        self.construct_BinaryTree()
-        self.construct_AVLTree()
+        # self.construct_intro()
+        # self.construct_BinaryTree()
+        # self.construct_AVLTree()
+        self.construct_Dijkstra()
 
     def construct_intro(self):
         title = Text("数据结构与算法-课程作业讲解", font_size=40)
@@ -192,7 +194,8 @@ class slides(Slide):
         info.become(Text("还原完成!", font_size=28, color=GREEN).to_edge(DOWN, buff=0.3))
         self.wait(2)
         self.next_slide(auto_next=True)
-        self.play(*[FadeOut(m) for m in [pre_all, in_all, info]])
+        # self.play(*[FadeOut(m) for m in [pre_all, in_all, info]])
+        self.clear()
 
     def _insertion_group_count(self, node, tree) -> int:
         """Return number of animation groups produced by BST.insert()."""
@@ -272,3 +275,232 @@ class slides(Slide):
         info.become(Text("构建完成!", font_size=24, color=GREEN).to_edge(UP+RIGHT))
         self.wait(2)
         self.next_slide(auto_next=True)
+
+    def construct_Dijkstra(self):
+        # title = Text("Dijkstra 最短路径算法", font_size=40)
+        # self.play(Write(title))
+        # self.wait(0.5)
+        # self.next_slide()
+        # self.play(FadeOut(title))
+        
+        # 定义图的数据
+        vertices = ['A', 'B', 'C', 'D', 'E', 'F']
+        edges = [
+            ('A', 'B', 4),
+            ('A', 'C', 2),
+            ('A', 'D', 9),
+            ('B', 'C', 1),
+            ('B', 'D', 5),
+            ('B', 'E', 4),
+            ('B', 'F', 15),
+            ('C', 'B', 1),
+            ('C', 'D', 8),
+            ('C', 'E', 10),
+            ('C', 'F', 12),
+            ('D', 'E', 2),
+            ('D', 'F', 6),
+            ('E', 'F', 3)
+        ]
+        
+        # 第一步：显示表格形式的边和权重
+        table_title = Text("图的边和权重", font_size=30).to_edge(UP)
+        # self.play(Write(table_title))
+        
+        # 创建表格
+        table_rows = []
+        header = VGroup(
+            Text("起点", font_size=22, color=BLUE),
+            Text("终点", font_size=22, color=GREEN),
+            Text("权重", font_size=22, color=YELLOW)
+        )
+        header.arrange(RIGHT, buff=0.8)
+        table_rows.append(header)
+        
+        for start, end, weight in edges:
+            row = VGroup(
+                Text(start, font_size=22),
+                Text(end, font_size=22),
+                Text(str(weight), font_size=22)
+            )
+            row.arrange(RIGHT, buff=0.8)
+            table_rows.append(row)
+        
+        edge_table = VGroup(*table_rows)
+        edge_table.arrange(DOWN, buff=0.3, aligned_edge=LEFT)
+        edge_table.center()
+        # self.play(Create(edge_table))
+        # self.wait(1)
+        # self.next_slide()
+        
+        # 第二步：将表格转换为图形
+        # self.play(FadeOut(table_title), FadeOut(edge_table))
+        
+        # 创建图形
+        graph = DijkstraGraph(vertices, edges, radius=2.5)
+        graph.center()
+        self.play(Create(graph))
+        self.wait(1)
+        self.next_slide()
+        
+        # 第三步：将场景分为左右两部分，图移动到左边，表格在右边
+        graph_left = graph.copy()
+        graph_left.shift(LEFT * 4)  # 向左移动更多
+        self.play(Transform(graph, graph_left))
+        
+
+        # 在右边创建初始表格框架（10行）
+        max_table_rows = 10
+        vertices_for_table = sorted(vertices)
+
+        # 创建初始历史记录
+        initial_history = [{
+            'visited_set': set(),
+            'distances': {v: float('infinity') for v in vertices},
+            'current_vertex': None
+        }]
+        # 设置起点距离为0
+        initial_history[0]['distances']['A'] = 0
+        
+        table_right = create_dijkstra_history_table(initial_history, max_rows=max_table_rows, edges=edges)
+        table_right.shift(RIGHT * 3)  # 向右移动更多
+        self.play(Create(table_right))
+        self.wait(1)
+        self.next_slide()
+        
+        # 第四步：开始执行Dijkstra算法
+        dijkstra = DijkstraTable(vertices, 'A')
+        history = initial_history.copy()  # 记录历史状态
+        
+        info_text = Text("", font_size=20).to_edge(DOWN, buff=0.5)
+        self.add(info_text)
+        
+        iteration = 0
+        while True:
+            current_vertex, current_dist = dijkstra.get_current_min()
+            if current_vertex is None or current_dist == float('infinity'):
+                break
+            
+            iteration += 1
+            
+            # 更新说明文字
+            info_text.become(Text(
+                f"步骤 {iteration}: 从 {current_vertex} 开始探索",
+                font_size=24, color=YELLOW
+            ).to_edge(DOWN, buff=0.5))
+            self.play(Write(info_text))
+            
+            # 高亮当前节点
+            current_node = graph.get_node(current_vertex)
+            self.play(current_node.anim_highlight(YELLOW))
+            
+            # 获取当前节点的所有邻居
+            neighbors = []
+            for start, end, weight in edges:
+                if start == current_vertex and end not in dijkstra.visited:
+                    neighbors.append((end, weight))
+            
+            # 高亮所有可能的路径（黄色）
+            edge_anims = []
+            for neighbor, weight in neighbors:
+                edge_anims.extend(graph.highlight_edge(current_vertex, neighbor, YELLOW))
+            
+            if edge_anims:
+                self.play(*edge_anims)
+            self.wait(0.5)
+            self.next_slide()
+            
+            # 找到最短路径并高亮（红色）
+            best_neighbor = None
+            best_distance = float('infinity')
+            
+            # 计算所有可达邻居的距离
+            reachable_neighbors = {}
+            for neighbor, weight in neighbors:
+                new_dist = dijkstra.distances[current_vertex] + weight
+                reachable_neighbors[neighbor] = new_dist
+                if new_dist < best_distance:
+                    best_distance = new_dist
+                    best_neighbor = neighbor
+            
+            if best_neighbor:
+                # 高亮最短路径为红色
+                self.play(*graph.highlight_edge(current_vertex, best_neighbor, GREEN))
+
+                # 取消其他路径的高亮，保留最短路径的红色高亮
+                for neighbor, weight in neighbors:
+                    if neighbor != best_neighbor:
+                        self.play(*graph.unhighlight_edge(current_vertex, neighbor))
+                
+                self.next_slide()
+
+                # 更新说明
+                info_text.become(Text(
+                    f"选择最短路径: {current_vertex} -> {best_neighbor} (距离 {int(best_distance)})",
+                    font_size=22, color=RED
+                ).to_edge(DOWN, buff=0.5))
+                self.play(Write(info_text))
+                
+                # 更新距离
+                dijkstra.update_distance(best_neighbor, best_distance, current_vertex)
+                
+                # 更新其他可达邻居的距离（显示可达距离而不是无穷）
+                for neighbor, distance in reachable_neighbors.items():
+                    if neighbor != best_neighbor:
+                        # 这些是可达但不是最短的路径
+                        if distance < dijkstra.distances[neighbor]:
+                            dijkstra.distances[neighbor] = distance
+                
+                # 记录当前状态到历史
+                history.append({
+                    'visited_set': dijkstra.visited.copy(),
+                    'distances': dijkstra.distances.copy(),
+                    'current_vertex': current_vertex
+                })
+                
+                # 重新生成表格（表格大小不变，只是填充新内容）
+                new_table = create_dijkstra_history_table(history, max_rows=max_table_rows, edges=edges)
+                new_table.shift(RIGHT * 3.5)
+                self.play(Transform(table_right, new_table))
+            else:
+                # 即使没有更新距离，也要记录当前状态
+                history.append({
+                    'visited_set': dijkstra.visited.copy(),
+                    'distances': dijkstra.distances.copy(),
+                    'current_vertex': current_vertex
+                })
+                
+                # 重新生成表格
+                new_table = create_dijkstra_history_table(history, max_rows=max_table_rows, edges=edges)
+                new_table.shift(RIGHT * 3.5)
+                self.play(Transform(table_right, new_table))
+            
+            # 标记当前节点为已访问
+            dijkstra.mark_visited(current_vertex)
+            current_node.anim_set_color(GREEN)
+            self.play(current_node.anim_set_color(GREEN))
+            
+            self.wait(1)
+            self.next_slide()
+        
+        # 算法完成
+        info_text.become(Text(
+            "算法完成！已找到从起点 A 到所有其他顶点的最短路径",
+            font_size=24, color=GREEN
+        ).to_edge(DOWN, buff=0.5))
+        self.play(Write(info_text))
+        
+        # 最终表格
+        final_history = history.copy()
+        final_history.append({
+            'visited_set': dijkstra.visited.copy(),
+            'distances': dijkstra.distances.copy(),
+            'current_vertex': None
+        })
+        
+        final_table = create_dijkstra_history_table(final_history, max_rows=max_table_rows, edges=edges)
+        final_table.shift(RIGHT * 3.5)
+        self.play(Transform(table_right, final_table))
+        
+        self.wait(3)
+        self.next_slide(auto_next=True)
+        self.clear()

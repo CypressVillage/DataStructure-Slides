@@ -1,5 +1,5 @@
 anim:
-	manim -pqh slides.py
+	manim -qh slides.py
 
 ppt:
 	manim-slides convert slides slide.html --one-file --offline
