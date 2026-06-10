@@ -67,8 +67,20 @@ class DijkstraGraph(VGroup):
         else:
             edge_start = start_pos
             edge_end = end_pos
+            unit_dir = RIGHT
         
-        line = Line(edge_start, edge_end, color=WHITE, stroke_width=2)
+        # 对于双向连接路径做偏移处理
+        has_reverse_edge = any(
+            edge_start_name == end and edge_end_name == start
+            for edge_start_name, edge_end_name, _ in self.edges
+        )
+        if has_reverse_edge:
+            perpendicular = np.array([-unit_dir[1], unit_dir[0], 0])
+            edge_offset = perpendicular * 0.12
+            edge_start += edge_offset
+            edge_end += edge_offset
+        
+        line = Line(edge_start, edge_end, color=WHITE, stroke_width=4)
         
         # 计算权重数字的位置（在箭头起始端）
         start_offset = 0.3  # 距离起始端的偏移量
@@ -83,7 +95,7 @@ class DijkstraGraph(VGroup):
         weight_bg.move_to(weight_pos)
 
         # 创建统一大小的箭头（固定大小）
-        arrow = Arrow(edge_start, edge_end, color=WHITE, stroke_width=2, buff=0.15, tip_length=0.2)
+        arrow = Arrow(edge_start, edge_end, color=WHITE, stroke_width=4, buff=0.15, tip_length=0.2)
 
         # 按顺序添加：先线，再箭头，再数字组（确保数字在最上层不被覆盖）
         edge_group = VGroup(line, arrow, weight_bg, weight_text)
@@ -147,121 +159,74 @@ def create_dijkstra_history_table(history: List[Dict], max_rows: int = 10, edges
         history: 历史记录列表，每个元素包含:
             - 'visited_set': 当前已访问的顶点集
             - 'distances': 当前的距离字典
+            - 'previous': 当前的前驱顶点字典(可选)
             - 'current_vertex': 当前处理的顶点(可选)
         max_rows: 表格的最大行数（包括表头）
         edges: 图的边列表，用于计算可达距离
     """
-    rows = []
-    
-    # 确定顶点顺序和列宽
     if not history or not history[0]['distances']:
         return VGroup()
     
     vertices = sorted(history[0]['distances'].keys())
-    n_vertices = len(vertices)
-    
-    # 设置列宽
-    vertex_set_width = 2.0
-    column_width = 0.8
-    
-    # 表头
-    header_texts = ["顶点集"]
-    header_texts.extend(vertices)
-    
-    # 创建表头背景
-    header_bg_width = vertex_set_width + n_vertices * column_width + 0.3
-    header_bg = Rectangle(width=header_bg_width, height=0.5, color=YELLOW, fill_color=YELLOW, fill_opacity=0.2)
-    
-    # 创建表头文本
-    header_texts_objs = [Text(text, font_size=18, color=YELLOW) for text in header_texts]
-    
-    # 设置表头文本位置
-    header_texts_objs[0].move_to(header_bg.get_center() + LEFT * (header_bg_width/2 - vertex_set_width/2))
-    
-    # 安排顶点列的表头
-    for j in range(1, len(header_texts_objs)):
-        cell_center_x = -vertex_set_width/2 + column_width * (j - 0.5) + 0.2
-        cell_center = header_bg.get_center() + RIGHT * cell_center_x
-        header_texts_objs[j].move_to(cell_center)
-    
-    header = VGroup(*header_texts_objs)
-    rows.append(VGroup(header_bg, header))
-    
-    # 数据行 - 预先创建所有行的框架
+    rows = []
+    column_widths = [2.0] + [1.0 for _ in vertices]
+    table_width = sum(column_widths)
     row_height = 0.4
+
+    column_centers = []
+    left_edge = -table_width / 2
+    for width in column_widths:
+        column_centers.append(left_edge + width / 2)
+        left_edge += width
+
+    header_texts = ["顶点集", *vertices]
+    header = VGroup(*[
+        Text(text, font_size=18, color=YELLOW).move_to(RIGHT * column_centers[i])
+        for i, text in enumerate(header_texts)
+    ])
+    rows.append(header)
     
-    for i in range(max_rows - 1):
-        # 创建行背景
-        row_bg = Rectangle(width=header_bg_width, height=row_height, color=BLUE, fill_color=BLUE, fill_opacity=0.05)
+    for i, record in enumerate(history[:max_rows - 1], start=1):
+        visited_set = record['visited_set']
+        distances = record['distances']
+        previous = record.get('previous', {})
+        current_vertex = record.get('current_vertex')
+        row_y = -i * row_height
+        row_texts = []
         
-        if i < len(history):
-            record = history[i]
-            visited_set = record['visited_set']
-            distances = record['distances']
-            current_vertex = record.get('current_vertex')
+        visited_text = ",".join(sorted(visited_set)) if visited_set else "∅"
+        row_texts.append(Text(visited_text, font_size=16, color=WHITE))
+        
+        for vertex in vertices:
+            dist = distances[vertex]
+            is_reachable = dist != float('infinity')
+            if not is_reachable and edges:
+                for v in visited_set:
+                    for edge_start, edge_end, weight in edges:
+                        if edge_start == v and edge_end == vertex and distances[edge_start] != float('infinity'):
+                            is_reachable = True
+                            dist = distances[edge_start] + weight
+                            break
+                    if is_reachable:
+                        break
             
-            row_texts = []
-            
-            # 当前顶点集
-            if visited_set:
-                visited_text = ",".join(sorted(visited_set))
+            if is_reachable:
+                predecessor = previous.get(vertex)
+                dist_str = f"{int(dist)}({predecessor})" if predecessor else str(int(dist))
             else:
-                visited_text = "∅"
-            row_texts.append(Text(visited_text, font_size=16, color=WHITE))
-            
-            # 各顶点的最短距离
-            for vertex in vertices:
-                dist = distances[vertex]
-                
-                # 检查顶点是否可达（通过已访问顶点集可以到达）
-                is_reachable = False
-                if dist != float('infinity'):
-                    is_reachable = True
-                else:
-                    # 检查是否有从已访问顶点到该顶点的边
-                    if edges:
-                        for v in visited_set:
-                            for edge_start, edge_end, weight in edges:
-                                if edge_start == v and edge_end == vertex:
-                                    if distances[edge_start] != float('infinity'):
-                                        is_reachable = True
-                                        dist = distances[edge_start] + weight
-                                        break
-                                if is_reachable:
-                                    break
-                            if is_reachable:
-                                break
-                
-                dist_str = "∞" if not is_reachable else str(int(dist))
-                
-                # 高亮当前处理的顶点
-                if vertex == current_vertex:
-                    color = YELLOW
-                elif vertex in visited_set:
-                    color = GREEN
-                else:
-                    color = WHITE
-                
-                row_texts.append(Text(dist_str, font_size=18, color=color))
-            
-            # 创建行内容并居中对齐
-            row_content = VGroup(*row_texts)
-            
-            # 第一列（顶点集）
-            row_content[0].move_to(row_bg.get_center() + LEFT * (header_bg_width/2 - vertex_set_width/2))
-            
-            # 其他列（顶点距离）
-            for j in range(1, len(row_content)):
-                cell_center_x = -vertex_set_width/2 + column_width * (j - 0.5) + 0.2
-                cell_center = row_bg.get_center() + RIGHT * cell_center_x
-                row_content[j].move_to(cell_center)
-            
-            rows.append(VGroup(row_bg, row_content))
-        else:
-            # 空行，只显示背景
-            rows.append(VGroup(row_bg))
+                dist_str = "∞"
+            if vertex == current_vertex:
+                color = YELLOW
+            elif vertex in visited_set:
+                color = GREEN
+            else:
+                color = WHITE
+            row_texts.append(Text(dist_str, font_size=18, color=color))
+        
+        row = VGroup(*row_texts)
+        for j, text in enumerate(row):
+            text.move_to(RIGHT * column_centers[j] + DOWN * abs(row_y))
+        rows.append(row)
     
     table = VGroup(*rows)
-    table.arrange(DOWN, buff=0.0, aligned_edge=RIGHT)
-    
     return table
