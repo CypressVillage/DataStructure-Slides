@@ -7,8 +7,11 @@ from src.Dijkstra import DijkstraGraph, DijkstraTable, create_dijkstra_history_t
 class slides(Slide):
     def construct(self):
         self.construct_intro()
+        self.construct_BinaryTree_explain()
         self.construct_BinaryTree()
+        self.construct_AVLTree_explain()
         self.construct_AVLTree()
+        self.construct_Dijkstra_explain()
         self.construct_Dijkstra()
         self.construct_Thanks()
 
@@ -22,11 +25,11 @@ class slides(Slide):
         title = Text("目录", font_size=40).to_edge(UP+LEFT)
         menu = Text(
         """
-            二叉树遍历与还原
-            AVL 树插入、旋转与平衡维护
-            Dijkstra 最短路径算法
+            · 二叉树遍历与还原
+            · AVL 树插入、旋转与平衡维护
+            · Dijkstra 最短路径算法
         """,
-            font_size=30
+            font_size=30, line_spacing=1.5
         ).to_edge(UP+LEFT).shift(DOWN)
         self.play(Write(title))
         self.play(Write(menu))
@@ -44,12 +47,6 @@ class slides(Slide):
         return VGroup(*texts).arrange(RIGHT, buff=0.08)
 
     def construct_BinaryTree(self):
-        title = Text("二叉树遍历与还原", font_size=40)
-        self.play(Write(title))
-        self.wait(0.5)
-        self.next_slide()
-        self.play(FadeOut(title))
-
         problem = Text(
             "已知前序和中序遍历，如何还原二叉树？",
             font_size=30,
@@ -131,12 +128,10 @@ class slides(Slide):
                 f"前序定根 = {root_val}",
                 font_size=24, color=YELLOW,
             ).to_edge(DOWN, buff=0.3))
-
-            self.play(pre_texts[pre_idx[0]].animate.set_color(YELLOW))
             
             # 高亮中序对应的节点作为根
             root_node = in_nodes[in_pos]
-            self.play(root_node[0].animate.set_color(YELLOW), root_node[1].animate.set_color(YELLOW))
+            self.play(pre_texts[pre_idx[0]].animate.set_color(YELLOW), root_node[0].animate.set_color(YELLOW), root_node[1].animate.set_color(YELLOW))
             self.wait(0.2)
 
             # 把选中的根节点变到树的位置
@@ -204,13 +199,6 @@ class slides(Slide):
         return 3  # Create(node), Create(edge), Layout
 
     def construct_AVLTree(self):
-        title = Text("AVL 树插入、旋转与平衡维护", font_size=40)
-        self.play(Write(title))
-        self.wait(0.5)
-        self.next_slide()
-
-        self.play(FadeOut(title))
-
         tree = AVLTree(root_position=UP * 2)
         values = [30, 20, 40, 10, 25, 22, 50, 60, 55]
 
@@ -278,12 +266,6 @@ class slides(Slide):
         self.clear()
 
     def construct_Dijkstra(self):
-        title = Text("Dijkstra 最短路径算法", font_size=40)
-        self.play(Write(title))
-        self.wait(0.5)
-        self.next_slide()
-        self.play(FadeOut(title))
-        
         # 定义图的数据
         vertices = ['A', 'B', 'C', 'D', 'E', 'F']
         edges = [
@@ -489,7 +471,122 @@ class slides(Slide):
         self.next_slide(auto_next=True)
         self.clear()
 
+    def construct_BinaryTree_explain(self):
+        title = Text("二叉树遍历与还原", font_size=40)
+        self.play(Write(title))
+        self.wait(0.5)
+        self.next_slide()
+        self.play(FadeOut(title))
+
+        pre_title = Text("前序遍历 (Preorder)", font_size=36, color=BLUE).to_edge(UP, buff=0.4)
+        self.play(Write(pre_title))
+        self.next_slide()
+
+        pre_rule = Text("访问顺序：根 → 左子树 → 右子树", font_size=28).next_to(pre_title, DOWN, buff=0.6)
+        self.play(Write(pre_rule))
+
+        pre_arr = Text('前序结果: [ A, B, D, G, E, C, F, H, I ]', font_size=26, color=BLUE).next_to(pre_rule, DOWN, buff=0.4)
+        self.play(Write(pre_arr))
+
+        pre_key = Text("→ 第一个元素 A 就是根节点", font_size=26, color=YELLOW).next_to(pre_arr, DOWN, buff=0.4)
+        self.play(Write(pre_key))
+        self.wait(1.5)
+        self.next_slide()
+        self.play(FadeOut(pre_title), FadeOut(pre_rule), FadeOut(pre_arr), FadeOut(pre_key))
+
+        in_title = Text("中序遍历 (Inorder)", font_size=36, color=GREEN).to_edge(UP, buff=0.4)
+        self.play(Write(in_title))
+        self.next_slide()
+
+        in_rule = Text("访问顺序：左子树 → 根 → 右子树", font_size=28).next_to(in_title, DOWN, buff=0.6)
+        self.play(Write(in_rule))
+
+        in_arr = Text('中序结果: [ D, G, B, E, A, H, F, C, I ]', font_size=26, color=GREEN).next_to(in_rule, DOWN, buff=0.4)
+        self.play(Write(in_arr))
+
+        in_key = Text("→ A 左边都在左子树，右边都在右子树", font_size=26, color=YELLOW).next_to(in_arr, DOWN, buff=0.4)
+        self.play(Write(in_key))
+        self.wait(1.5)
+        self.next_slide()
+        self.play(FadeOut(in_title), FadeOut(in_rule), FadeOut(in_arr), FadeOut(in_key))
+
+        self.next_slide()
+
+    def construct_AVLTree_explain(self):        
+        title = Text("AVL 树插入、旋转与平衡维护", font_size=40)
+        self.play(Write(title))
+        self.wait(0.5)
+        self.next_slide()
+
+        self.play(FadeOut(title))
+        why_title = Text("为什么需要平衡？", font_size=36).to_edge(UP, buff=0.6)
+        self.play(Write(why_title))
+        self.next_slide()
+
+        bst_skew = Text("普通 BST 在插入有序序列时会退化为链表", font_size=28).next_to(why_title, DOWN, buff=0.6)
+        bst_o_n = Text("查找时间复杂度从 O(log n) 退化为 O(n)", font_size=28, color=RED).next_to(bst_skew, DOWN, buff=0.3)
+        avl_goal = Text("AVL 树通过保持平衡，确保始终 O(log n)", font_size=28, color=GREEN).next_to(bst_o_n, DOWN, buff=0.3)
+        self.play(Write(bst_skew), Write(bst_o_n), Write(avl_goal))
+        self.wait(1.5)
+        self.next_slide()
+        self.play(FadeOut(why_title), FadeOut(bst_skew), FadeOut(bst_o_n), FadeOut(avl_goal))
+
+        bf_title = Text("平衡因子与旋转操作", font_size=36, color=YELLOW).to_edge(UP, buff=0.4)
+        self.play(Write(bf_title))
+
+        bf_def = Text("平衡因子 = 左子树高 − 右子树高, 允许范围 {−1, 0, 1}", font_size=26).next_to(bf_title, DOWN, buff=0.5)
+        self.play(Write(bf_def))
+        self.wait(0.5)
+        self.next_slide()
+
+        cases_intro = Text("|平衡因子| = 2 时通过旋转恢复平衡：", font_size=26).next_to(bf_def, DOWN, buff=0.4)
+        self.play(Write(cases_intro))
+
+        ll = Text("LL (左左): 插在左孩子的左子树  →  右旋", font_size=26, color=BLUE).next_to(cases_intro, DOWN, buff=0.3, aligned_edge=LEFT)
+        rr = Text("RR (右右): 插在右孩子的右子树  →  左旋", font_size=26, color=BLUE).next_to(ll, DOWN, buff=0.15, aligned_edge=LEFT)
+        lr = Text("LR (左右): 插在左孩子的右子树  →  先左旋再右旋", font_size=26, color=BLUE).next_to(rr, DOWN, buff=0.15, aligned_edge=LEFT)
+        rl = Text("RL (右左): 插在右孩子的左子树  →  先右旋再左旋", font_size=26, color=BLUE).next_to(lr, DOWN, buff=0.15, aligned_edge=LEFT)
+        self.play(Write(ll), Write(rr), Write(lr), Write(rl))
+        self.wait(2.5)
+        self.next_slide()
+        self.play(FadeOut(bf_title), FadeOut(bf_def), FadeOut(cases_intro),
+                  FadeOut(ll), FadeOut(rr), FadeOut(lr), FadeOut(rl))
+
+    def construct_Dijkstra_explain(self):
+        title = Text("Dijkstra 最短路径算法", font_size=40)
+        self.play(Write(title))
+        self.wait(0.5)
+        self.next_slide()
+        self.play(FadeOut(title))
+
+        prob = Text("单源最短路径问题", font_size=36).to_edge(UP, buff=0.6)
+        self.play(Write(prob))
+        prob_desc = Text("给定一个带权图和一个起点，求起点到所有其他顶点的最短路径", font_size=26).next_to(prob, DOWN, buff=0.6)
+        self.play(Write(prob_desc))
+        self.wait(1)
+        self.next_slide()
+        self.play(FadeOut(prob), FadeOut(prob_desc))
+
+        core = Text("Dijkstra 算法核心思想", font_size=36, color=YELLOW).to_edge(UP, buff=0.4)
+        self.play(Write(core))
+
+        idea = Text("贪心策略：从未访问顶点中选择距离最小的顶点，松弛其出边", font_size=26).next_to(core, DOWN, buff=0.5)
+        premise = Text("前提条件：图中不能有负权边", font_size=26, color=RED).next_to(idea, DOWN, buff=0.3)
+        self.play(Write(idea), Write(premise))
+        self.next_slide()
+
+        steps = Text("算法流程", font_size=28).next_to(premise, DOWN, buff=0.5).to_edge(LEFT, buff=3.4)
+        s1 = Text("① 初始化：dist[起点]=0，其余 dist=∞", font_size=24).next_to(steps, DOWN, buff=0.3, aligned_edge=LEFT)
+        s2 = Text("② 从未访问顶点中选出 dist 最小的顶点 u", font_size=24).next_to(s1, DOWN, buff=0.15, aligned_edge=LEFT)
+        s3 = Text("③ 松弛 u 的出边：dist[v] = min(dist[v], dist[u] + w(u,v))", font_size=24).next_to(s2, DOWN, buff=0.15, aligned_edge=LEFT)
+        s4 = Text("④ 标记 u 已访问，重复 ②~④ 直到全部访问", font_size=24).next_to(s3, DOWN, buff=0.15, aligned_edge=LEFT)
+        self.play(Write(steps), Write(s1), Write(s2), Write(s3), Write(s4))
+        self.wait(2)
+        self.next_slide()
+        self.play(FadeOut(core), FadeOut(idea), FadeOut(premise),
+                  FadeOut(steps), FadeOut(s1), FadeOut(s2), FadeOut(s3), FadeOut(s4))
+
     def construct_Thanks(self):
-        title = Text("谢谢观看！", font_size=40)
+        title = Text("感谢观看！", font_size=40)
         self.play(Write(title))
         self.wait(2)
